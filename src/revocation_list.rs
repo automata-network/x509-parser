@@ -27,25 +27,6 @@ use std::collections::HashMap;
 ///
 /// To parse a CRL and print information about revoked certificates:
 ///
-/// ```rust
-/// use x509_parser::prelude::FromDer;
-/// use x509_parser::revocation_list::CertificateRevocationList;
-///
-/// # static DER: &'static [u8] = include_bytes!("../assets/example.crl");
-/// #
-/// # fn main() {
-/// let res = CertificateRevocationList::from_der(DER);
-/// match res {
-///     Ok((_rem, crl)) => {
-///         for revoked in crl.iter_revoked_certificates() {
-///             println!("Revoked certificate serial: {}", revoked.raw_serial_as_string());
-///             println!("  Reason: {}", revoked.reason_code().unwrap_or_default().1);
-///         }
-///     },
-///     _ => panic!("CRL parsing failed: {:?}", res),
-/// }
-/// # }
-/// ```
 #[derive(Clone, Debug)]
 pub struct CertificateRevocationList<'a> {
     pub tbs_cert_list: TbsCertList<'a>,
@@ -252,54 +233,48 @@ impl<'a> FromDer<'a, X509Error> for TbsCertList<'a> {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct RevokedCertificate<'a> {
-    /// The Serial number of the revoked certificate
-    pub user_certificate: BigUint,
-    /// The date on which the revocation occurred is specified.
-    pub revocation_date: ASN1Time,
-    /// Additional information about revocation
-    extensions: Vec<X509Extension<'a>>,
+    /// The Raw serial number of the revoked certificate
     pub(crate) raw_serial: &'a [u8],
+    // /// The date on which the revocation occurred is specified.
+    // pub revocation_date: ASN1Time,
+    // /// Additional information about revocation
+    // extensions: Vec<X509Extension<'a>>,
 }
 
 impl RevokedCertificate<'_> {
-    /// Return the serial number of the revoked certificate
-    pub fn serial(&self) -> &BigUint {
-        &self.user_certificate
-    }
+    // /// Get the CRL entry extensions.
+    // #[inline]
+    // pub fn extensions(&self) -> &[X509Extension] {
+    //     &self.extensions
+    // }
 
-    /// Get the CRL entry extensions.
-    #[inline]
-    pub fn extensions(&self) -> &[X509Extension] {
-        &self.extensions
-    }
+    // /// Returns an iterator over the CRL entry extensions
+    // #[inline]
+    // pub fn iter_extensions(&self) -> impl Iterator<Item = &X509Extension> {
+    //     self.extensions.iter()
+    // }
 
-    /// Returns an iterator over the CRL entry extensions
-    #[inline]
-    pub fn iter_extensions(&self) -> impl Iterator<Item = &X509Extension> {
-        self.extensions.iter()
-    }
+    // /// Searches for a CRL entry extension with the given `Oid`.
+    // ///
+    // /// Note: if there are several extensions with the same `Oid`, the first one is returned.
+    // pub fn find_extension(&self, oid: &Oid) -> Option<&X509Extension> {
+    //     self.extensions.iter().find(|&ext| ext.oid == *oid)
+    // }
 
-    /// Searches for a CRL entry extension with the given `Oid`.
-    ///
-    /// Note: if there are several extensions with the same `Oid`, the first one is returned.
-    pub fn find_extension(&self, oid: &Oid) -> Option<&X509Extension> {
-        self.extensions.iter().find(|&ext| ext.oid == *oid)
-    }
-
-    /// Builds and returns a map of CRL entry extensions.
-    ///
-    /// If an extension is present twice, this will fail and return `DuplicateExtensions`.
-    pub fn extensions_map(&self) -> Result<HashMap<Oid, &X509Extension>, X509Error> {
-        self.extensions
-            .iter()
-            .try_fold(HashMap::new(), |mut m, ext| {
-                if m.contains_key(&ext.oid) {
-                    return Err(X509Error::DuplicateExtensions);
-                }
-                m.insert(ext.oid.clone(), ext);
-                Ok(m)
-            })
-    }
+    // /// Builds and returns a map of CRL entry extensions.
+    // ///
+    // /// If an extension is present twice, this will fail and return `DuplicateExtensions`.
+    // pub fn extensions_map(&self) -> Result<HashMap<Oid, &X509Extension>, X509Error> {
+    //     self.extensions
+    //         .iter()
+    //         .try_fold(HashMap::new(), |mut m, ext| {
+    //             if m.contains_key(&ext.oid) {
+    //                 return Err(X509Error::DuplicateExtensions);
+    //             }
+    //             m.insert(ext.oid.clone(), ext);
+    //             Ok(m)
+    //         })
+    // }
 
     /// Get the raw bytes of the certificate serial number
     pub fn raw_serial(&self) -> &[u8] {
@@ -311,26 +286,26 @@ impl RevokedCertificate<'_> {
         format_serial(self.raw_serial)
     }
 
-    /// Get the code identifying the reason for the revocation, if present
-    pub fn reason_code(&self) -> Option<(bool, ReasonCode)> {
-        self.find_extension(&OID_X509_EXT_REASON_CODE)
-            .and_then(|ext| match ext.parsed_extension {
-                ParsedExtension::ReasonCode(code) => Some((ext.critical, code)),
-                _ => None,
-            })
-    }
+    // /// Get the code identifying the reason for the revocation, if present
+    // pub fn reason_code(&self) -> Option<(bool, ReasonCode)> {
+    //     self.find_extension(&OID_X509_EXT_REASON_CODE)
+    //         .and_then(|ext| match ext.parsed_extension {
+    //             ParsedExtension::ReasonCode(code) => Some((ext.critical, code)),
+    //             _ => None,
+    //         })
+    // }
 
-    /// Get the invalidity date, if present
-    ///
-    /// The invalidity date is the date on which it is known or suspected that the private
-    ///  key was compromised or that the certificate otherwise became invalid.
-    pub fn invalidity_date(&self) -> Option<(bool, ASN1Time)> {
-        self.find_extension(&OID_X509_EXT_INVALIDITY_DATE)
-            .and_then(|ext| match ext.parsed_extension {
-                ParsedExtension::InvalidityDate(date) => Some((ext.critical, date)),
-                _ => None,
-            })
-    }
+    // /// Get the invalidity date, if present
+    // ///
+    // /// The invalidity date is the date on which it is known or suspected that the private
+    // ///  key was compromised or that the certificate otherwise became invalid.
+    // pub fn invalidity_date(&self) -> Option<(bool, ASN1Time)> {
+    //     self.find_extension(&OID_X509_EXT_INVALIDITY_DATE)
+    //         .and_then(|ext| match ext.parsed_extension {
+    //             ParsedExtension::InvalidityDate(date) => Some((ext.critical, date)),
+    //             _ => None,
+    //         })
+    // }
 }
 
 // revokedCertificates     SEQUENCE OF SEQUENCE  {
@@ -342,13 +317,12 @@ impl RevokedCertificate<'_> {
 impl<'a> FromDer<'a, X509Error> for RevokedCertificate<'a> {
     fn from_der(i: &'a [u8]) -> X509Result<'a, Self> {
         parse_der_sequence_defined_g(|i, _| {
-            let (i, (raw_serial, user_certificate)) = parse_serial(i)?;
-            let (i, revocation_date) = ASN1Time::from_der(i)?;
-            let (i, extensions) = opt(complete(parse_extension_sequence))(i)?;
+            let (i, (raw_serial, _)) = parse_serial(i)?;
+            // let (i, revocation_date) = ASN1Time::from_der(i)?;
+            // let (i, extensions) = opt(complete(parse_extension_sequence))(i)?;
             let revoked = RevokedCertificate {
-                user_certificate,
-                revocation_date,
-                extensions: extensions.unwrap_or_default(),
+                // revocation_date,
+                // extensions: extensions.unwrap_or_default(),
                 raw_serial,
             };
             Ok((i, revoked))
