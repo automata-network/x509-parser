@@ -5,18 +5,18 @@ use crate::utils::format_serial;
 use crate::x509::{
     parse_serial, parse_signature_value, AlgorithmIdentifier, ReasonCode, X509Name, X509Version,
 };
+use crate::oid_constants::*;
 
 #[cfg(feature = "verify")]
 use crate::verify::verify_signature;
 #[cfg(feature = "verify")]
 use crate::x509::SubjectPublicKeyInfo;
-use asn1_rs::{BitString, FromDer};
+use asn1_rs::{BitString, FromDer, Oid};
 use der_parser::der::*;
 use der_parser::num_bigint::BigUint;
 use nom::combinator::{all_consuming, complete, map, opt};
 use nom::multi::many0;
 use nom::Offset;
-use oid_registry::*;
 use std::collections::HashMap;
 
 /// An X.509 v2 Certificate Revocation List (CRL).

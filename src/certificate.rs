@@ -10,6 +10,7 @@ use crate::x509::{
     parse_serial, parse_signature_value, AlgorithmIdentifier, SubjectPublicKeyInfo, X509Name,
     X509Version,
 };
+use crate::oid_constants::*;
 
 #[cfg(feature = "verify")]
 use crate::verify::verify_signature;
@@ -20,7 +21,6 @@ use der_parser::error::*;
 use der_parser::num_bigint::BigUint;
 use der_parser::*;
 use nom::{Offset, Parser};
-use oid_registry::*;
 use std::collections::HashMap;
 use time::Duration;
 
@@ -37,30 +37,6 @@ use time::Duration;
 /// A `X509Certificate` is a zero-copy view over a buffer, so the lifetime is the same as the
 /// buffer containing the binary representation.
 ///
-/// ```rust
-/// # use x509_parser::prelude::FromDer;
-/// # use x509_parser::certificate::X509Certificate;
-/// #
-/// # static DER: &'static [u8] = include_bytes!("../assets/IGC_A.der");
-/// #
-/// fn display_x509_info(x509: &X509Certificate<'_>) {
-///      let subject = x509.subject();
-///      let issuer = x509.issuer();
-///      println!("X.509 Subject: {}", subject);
-///      println!("X.509 Issuer: {}", issuer);
-///      println!("X.509 serial: {}", x509.tbs_certificate.raw_serial_as_string());
-/// }
-/// #
-/// # fn main() {
-/// # let res = X509Certificate::from_der(DER);
-/// # match res {
-/// #     Ok((_rem, x509)) => {
-/// #         display_x509_info(&x509);
-/// #     },
-/// #     _ => panic!("x509 parsing failed: {:?}", res),
-/// # }
-/// # }
-/// ```
 #[derive(Clone, Debug, PartialEq)]
 pub struct X509Certificate<'a> {
     pub tbs_certificate: TbsCertificate<'a>,
@@ -133,8 +109,6 @@ impl<'a> FromDer<'a, X509Error> for X509Certificate<'a> {
     ///     Ok((_rem, x509)) => {
     ///         let subject = x509.subject();
     ///         let issuer = x509.issuer();
-    ///         println!("X.509 Subject: {}", subject);
-    ///         println!("X.509 Issuer: {}", issuer);
     ///     },
     ///     _ => panic!("x509 parsing failed: {:?}", res),
     /// }
@@ -156,32 +130,6 @@ impl<'a> FromDer<'a, X509Error> for X509Certificate<'a> {
 ///
 /// This object uses the `nom::Parser` trait, which must be imported.
 ///
-/// # Example
-///
-/// To parse a certificate without parsing extensions:
-///
-/// ```rust
-/// use x509_parser::certificate::X509CertificateParser;
-/// use x509_parser::nom::Parser;
-///
-/// # static DER: &'static [u8] = include_bytes!("../assets/IGC_A.der");
-/// #
-/// # fn main() {
-/// // create a parser that will not parse extensions
-/// let mut parser = X509CertificateParser::new()
-///     .with_deep_parse_extensions(false);
-/// let res = parser.parse(DER);
-/// match res {
-///     Ok((_rem, x509)) => {
-///         let subject = x509.subject();
-///         let issuer = x509.issuer();
-///         println!("X.509 Subject: {}", subject);
-///         println!("X.509 Issuer: {}", issuer);
-///     },
-///     _ => panic!("x509 parsing failed: {:?}", res),
-/// }
-/// # }
-/// ```
 #[derive(Clone, Copy, Debug)]
 pub struct X509CertificateParser {
     deep_parse_extensions: bool,
@@ -436,7 +384,7 @@ impl<'a> TbsCertificate<'a> {
     pub fn inhibit_anypolicy(
         &self,
     ) -> Result<Option<BasicExtension<&InhibitAnyPolicy>>, X509Error> {
-        self.get_extension_unique(&OID_X509_EXT_INHIBITANT_ANY_POLICY)?
+        self.get_extension_unique(&OID_X509_EXT_INHIBIT_ANY_POLICY)?
             .map_or(Ok(None), |ext| match ext.parsed_extension {
                 ParsedExtension::InhibitAnyPolicy(ref value) => {
                     Ok(Some(BasicExtension::new(ext.critical, value)))

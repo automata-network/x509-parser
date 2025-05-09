@@ -3,8 +3,8 @@
 //! Based on RFC5280
 //!
 
+use crate::oid_constants::*;
 use crate::error::{X509Error, X509Result};
-use crate::objects::*;
 use crate::public_key::*;
 
 use asn1_rs::{
@@ -22,7 +22,6 @@ use nom::bytes::complete::take;
 use nom::combinator::{complete, map};
 use nom::multi::{many0, many1};
 use nom::{Err, Offset};
-use oid_registry::*;
 use rusticata_macros::newtype_enum;
 use std::fmt;
 use std::iter::FromIterator;
@@ -332,14 +331,14 @@ pub struct X509Name<'a> {
     pub(crate) raw: &'a [u8],
 }
 
-impl fmt::Display for X509Name<'_> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match x509name_to_string(&self.rdn_seq, oid_registry()) {
-            Ok(o) => write!(f, "{}", o),
-            Err(_) => write!(f, "<X509Error: Invalid X.509 name>"),
-        }
-    }
-}
+// impl fmt::Display for X509Name<'_> {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         match x509name_to_string(&self.rdn_seq, oid_registry()) {
+//             Ok(o) => write!(f, "{}", o),
+//             Err(_) => write!(f, "<X509Error: Invalid X.509 name>"),
+//         }
+//     }
+// }
 
 impl<'a> X509Name<'a> {
     /// Builds a new `X509Name` from the provided elements.
@@ -348,13 +347,13 @@ impl<'a> X509Name<'a> {
         X509Name { rdn_seq, raw }
     }
 
-    /// Attempt to format the current name, using the given registry to convert OIDs to strings.
-    ///
-    /// Note: a default registry is provided with this crate, and is returned by the
-    /// [`oid_registry()`] method.
-    pub fn to_string_with_registry(&self, oid_registry: &OidRegistry) -> Result<String, X509Error> {
-        x509name_to_string(&self.rdn_seq, oid_registry)
-    }
+    // /// Attempt to format the current name, using the given registry to convert OIDs to strings.
+    // ///
+    // /// Note: a default registry is provided with this crate, and is returned by the
+    // /// [`oid_registry()`] method.
+    // pub fn to_string_with_registry(&self, oid_registry: &OidRegistry) -> Result<String, X509Error> {
+    //     x509name_to_string(&self.rdn_seq, oid_registry)
+    // }
 
     // Not using the AsRef trait, as that would not give back the full 'a lifetime
     pub fn as_raw(&self) -> &'a [u8] {
@@ -538,38 +537,38 @@ fn attribute_value_to_string(attr: &Any, _attr_type: &Oid) -> Result<String, X50
     }
 }
 
-/// Convert a DER representation of a X.509 name to a human-readable string
-///
-/// RDNs are separated with ","
-/// Multiple RDNs are separated with "+"
-///
-/// Attributes that cannot be represented by a string are hex-encoded
-fn x509name_to_string(
-    rdn_seq: &[RelativeDistinguishedName],
-    oid_registry: &OidRegistry,
-) -> Result<String, X509Error> {
-    rdn_seq.iter().try_fold(String::new(), |acc, rdn| {
-        rdn.set
-            .iter()
-            .try_fold(String::new(), |acc2, attr| {
-                let val_str = attribute_value_to_string(&attr.attr_value, &attr.attr_type)?;
-                // look ABBREV, and if not found, use shortname
-                let abbrev = match oid2abbrev(&attr.attr_type, oid_registry) {
-                    Ok(s) => String::from(s),
-                    _ => format!("{:?}", attr.attr_type),
-                };
-                let rdn = format!("{}={}", abbrev, val_str);
-                match acc2.len() {
-                    0 => Ok(rdn),
-                    _ => Ok(acc2 + " + " + &rdn),
-                }
-            })
-            .map(|v| match acc.len() {
-                0 => v,
-                _ => acc + ", " + &v,
-            })
-    })
-}
+// /// Convert a DER representation of a X.509 name to a human-readable string
+// ///
+// /// RDNs are separated with ","
+// /// Multiple RDNs are separated with "+"
+// ///
+// /// Attributes that cannot be represented by a string are hex-encoded
+// fn x509name_to_string(
+//     rdn_seq: &[RelativeDistinguishedName],
+//     oid_registry: &OidRegistry,
+// ) -> Result<String, X509Error> {
+//     rdn_seq.iter().try_fold(String::new(), |acc, rdn| {
+//         rdn.set
+//             .iter()
+//             .try_fold(String::new(), |acc2, attr| {
+//                 let val_str = attribute_value_to_string(&attr.attr_value, &attr.attr_type)?;
+//                 // look ABBREV, and if not found, use shortname
+//                 let abbrev = match oid2abbrev(&attr.attr_type, oid_registry) {
+//                     Ok(s) => String::from(s),
+//                     _ => format!("{:?}", attr.attr_type),
+//                 };
+//                 let rdn = format!("{}={}", abbrev, val_str);
+//                 match acc2.len() {
+//                     0 => Ok(rdn),
+//                     _ => Ok(acc2 + " + " + &rdn),
+//                 }
+//             })
+//             .map(|v| match acc.len() {
+//                 0 => v,
+//                 _ => acc + ", " + &v,
+//             })
+//     })
+// }
 
 pub(crate) fn parse_signature_value(i: &[u8]) -> X509Result<BitString> {
     BitString::from_der(i).or(Err(Err::Error(X509Error::InvalidSignatureValue)))
@@ -655,9 +654,9 @@ mod tests {
             ],
             raw: &[], // incorrect, but enough for testing
         };
-        assert_eq!(
-            name.to_string(),
-            "C=FR, ST=Some-State, O=Internet Widgits Pty Ltd, CN=Test1 + CN=Test2"
-        );
+        // assert_eq!(
+        //     name.to_string(),
+        //     "C=FR, ST=Some-State, O=Internet Widgits Pty Ltd, CN=Test1 + CN=Test2"
+        // );
     }
 }

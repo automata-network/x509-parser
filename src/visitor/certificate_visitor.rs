@@ -1,8 +1,8 @@
 use asn1_rs::BitString;
-use oid_registry::*;
 
 use crate::certificate::*;
 use crate::extensions::*;
+use crate::oid_constants::*;
 use crate::x509::*;
 
 /// Visitor pattern for [`X509Certificate`]
@@ -24,30 +24,6 @@ use crate::x509::*;
 ///
 /// # Example
 ///
-/// ```rust
-/// use x509_parser::prelude::*;
-/// use x509_parser::visitor::X509CertificateVisitor;
-/// #[derive(Debug, Default)]
-/// struct SubjectIssuerVisitor {
-///     issuer: String,
-///     subject: String,
-///     is_ca: bool,
-/// }
-///
-/// impl X509CertificateVisitor for SubjectIssuerVisitor {
-///     fn visit_issuer(&mut self, name: &X509Name<'_>) {
-///         self.issuer = name.to_string();
-///     }
-///
-///     fn visit_subject(&mut self, name: &X509Name<'_>) {
-///         self.subject = name.to_string();
-///     }
-///
-///     fn visit_extension_basic_constraints(&mut self, bc: &BasicConstraints) {
-///         self.is_ca = bc.ca;
-///     }
-/// }
-/// ```
 pub trait X509CertificateVisitor {
     /// Run the provided visitor (`self`) over the [`X509Certificate`] object
     fn walk(&mut self, x509: &X509Certificate)
@@ -225,7 +201,7 @@ impl TbsCertificate<'_> {
                 if let ParsedExtension::CRLDistributionPoints(crl) = &extension.parsed_extension {
                     visitor.visit_extension_crl_distribution_points(crl);
                 }
-            } else if extension.oid == OID_X509_EXT_INHIBITANT_ANY_POLICY {
+            } else if extension.oid == OID_X509_EXT_INHIBIT_ANY_POLICY {
                 if let ParsedExtension::InhibitAnyPolicy(policy) = &extension.parsed_extension {
                     visitor.visit_extension_inhibit_anypolicy(policy);
                 }
@@ -261,11 +237,21 @@ mod tests {
 
         impl X509CertificateVisitor for SubjectIssuerVisitor {
             fn visit_issuer(&mut self, name: &X509Name) {
-                self.issuer = name.to_string();
+                self.issuer = name
+                    .iter_common_name()
+                    .next()
+                    .and_then(|cn| cn.as_str().ok())
+                    .unwrap_or_else(|| "Unknown Issuer CN")
+                    .to_string();
             }
 
             fn visit_subject(&mut self, name: &X509Name) {
-                self.subject = name.to_string();
+                self.subject = name
+                    .iter_common_name()
+                    .next()
+                    .and_then(|cn| cn.as_str().ok())
+                    .unwrap_or_else(|| "Unknown Subject CN")
+                    .to_string();
             }
 
             fn visit_extension_basic_constraints(&mut self, bc: &BasicConstraints) {

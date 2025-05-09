@@ -99,7 +99,7 @@ impl fmt::Display for GeneralName<'_> {
             GeneralName::RFC822Name(s) => write!(f, "RFC822Name({})", s),
             GeneralName::DNSName(s) => write!(f, "DNSName({})", s),
             GeneralName::X400Address(_) => write!(f, "X400Address(<unparsed>)"),
-            GeneralName::DirectoryName(dn) => write!(f, "DirectoryName({})", dn),
+            GeneralName::DirectoryName(dn) => write!(f, "DirectoryName(<unparsed>)"),
             GeneralName::EDIPartyName(_) => write!(f, "EDIPartyName(<unparsed>)"),
             GeneralName::URI(s) => write!(f, "URI({})", s),
             GeneralName::IPAddress(b) => write!(f, "IPAddress({})", format_serial(b)),

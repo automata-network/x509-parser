@@ -1,11 +1,11 @@
 use crate::error::X509Error;
+use crate::oid_constants::*;
 use crate::x509::AlgorithmIdentifier;
 use asn1_rs::{
-    oid, Any, CheckDerConstraints, Class, DerAutoDerive, Error, FromDer, OptTaggedExplicit,
+    oid, Any, CheckDerConstraints, Class, DerAutoDerive, Error, FromDer, Oid, OptTaggedExplicit,
     OptTaggedParser, Tag,
 };
 use core::convert::TryFrom;
-use oid_registry::*;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, PartialEq)]

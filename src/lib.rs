@@ -133,12 +133,13 @@
 ))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 
+pub mod oid_constants;
 pub mod certificate;
 pub mod certification_request;
 pub mod cri_attributes;
 pub mod error;
 pub mod extensions;
-pub mod objects;
+// pub mod objects;
 pub mod pem;
 pub mod prelude;
 pub mod public_key;
@@ -161,7 +162,6 @@ pub use asn1_rs;
 pub use der_parser;
 pub use der_parser::num_bigint;
 pub use nom;
-pub use oid_registry;
 
 use asn1_rs::FromDer;
 use certificate::X509Certificate;

@@ -1,11 +1,11 @@
 use asn1_rs::BitString;
 use der_parser::num_bigint::BigUint;
-use oid_registry::*;
 
 use crate::extensions::*;
 use crate::revocation_list::*;
 use crate::time::ASN1Time;
 use crate::x509::*;
+use crate::oid_constants::*;
 
 /// Visitor pattern for [`CertificateRevocationList`]
 ///
